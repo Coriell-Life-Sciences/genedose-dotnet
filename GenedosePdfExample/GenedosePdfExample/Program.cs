@@ -18,7 +18,7 @@ namespace GenedosePdfExample
             {
                 var model = new ReportModel
                 {
-                    pgxid = new Guid("guid-here"),
+                    pgxid = Guid.NewGuid(),
                     productIds = new[] { 88 },
                     lifestyles = new[] { 2, 3, 8, 17 }
                 };
@@ -59,15 +59,14 @@ namespace GenedosePdfExample
 
     public class PdfDownloader : IDisposable
     {
-        private HttpClientHandler _handler;
-        private HttpClient _client;
+        private readonly HttpClient _client;
 
         public PdfDownloader(String template, String oauthToken) 
             : this("api.coriell-services.com", template, oauthToken) { }
 
         public PdfDownloader(String host, String template, String oauthToken)
         {
-            _handler = new HttpClientHandler()
+            var handler = new HttpClientHandler()
             {
                 AutomaticDecompression = DecompressionMethods.GZip,
                 PreAuthenticate = true
@@ -80,7 +79,7 @@ namespace GenedosePdfExample
                 Query = "template=" + template
             };
 
-            _client = new HttpClient(_handler) { BaseAddress = urib.Uri };
+            _client = new HttpClient(handler, true) { BaseAddress = urib.Uri };
             _client.DefaultRequestHeaders.Accept.Clear();
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/pdf"));
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", oauthToken);
@@ -107,7 +106,6 @@ namespace GenedosePdfExample
                 if (disposing)
                 {
                     _client.Dispose();
-                    _handler.Dispose();
                 }
                 disposedValue = true;
             }
