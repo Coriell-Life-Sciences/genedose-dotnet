@@ -24,10 +24,9 @@ namespace GenedosePdfExample
                 };
                 using (var p = new PdfDownloader("template-here", "oauth-token-here"))
                 {
-                    using (var fs = File.OpenWrite(@"c:\temp\" + DateTime.Now.Ticks + ".pdf"))
-                    {
-                        p.DownloadAsync(model, fs).Wait();
-                    }
+                    using (Stream source = p.DownloadAsync(model).Result)
+                        using (var fs = File.OpenWrite(@"c:\temp\" + DateTime.Now.Ticks + ".pdf"))
+                            source.CopyTo(fs);
                 }
                 Console.WriteLine("done!");
             }
@@ -85,15 +84,11 @@ namespace GenedosePdfExample
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", oauthToken);
         }
 
-        public async Task DownloadAsync(ReportModel model, Stream target)
+        public async Task<Stream> DownloadAsync(ReportModel model)
         {
             var response = await _client.PostAsJsonAsync((String) null, model);
             response.EnsureSuccessStatusCode();
-            var stm = await response.Content.ReadAsStreamAsync();
-            using (stm)
-            {
-                await stm.CopyToAsync(target);
-            }
+            return await response.Content.ReadAsStreamAsync();
         }
 
         #region IDisposable Support
